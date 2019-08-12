@@ -57,9 +57,10 @@ class EpisodeRunner:
             pre_transition_data = {
                 "state": [self.env.get_state()],
                 "avail_actions": [self.env.get_avail_actions()],
-                "obs": [self.env.get_obs()]
+                "obs": [self.env.get_obs()],
+                "sigs": [np.zeros_like(self.env.get_obs())]
             }
-
+            # print('obs_shape in run():', np.array(self.env.get_obs()).shape)
             self.batch.update(pre_transition_data, ts=self.t)
 
             # Pass the entire batch of experiences up till now to the agents
@@ -82,7 +83,8 @@ class EpisodeRunner:
         last_data = {
             "state": [self.env.get_state()],
             "avail_actions": [self.env.get_avail_actions()],
-            "obs": [self.env.get_obs()]
+            "obs": [self.env.get_obs()],
+            "sigs": [np.zeros_like(self.env.get_obs())]
         }
         self.batch.update(last_data, ts=self.t)
 

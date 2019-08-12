@@ -14,6 +14,7 @@ from runners import REGISTRY as r_REGISTRY
 from controllers import REGISTRY as mac_REGISTRY
 from components.episode_buffer import ReplayBuffer
 from components.transforms import OneHot
+import numpy as np
 
 
 def run(_run, _config, _log):
@@ -88,11 +89,19 @@ def run_sequential(args, logger):
     scheme = {
         "state": {"vshape": env_info["state_shape"]},
         "obs": {"vshape": env_info["obs_shape"], "group": "agents"},
+        "sigs": {"vshape": args.sig_size, "group": "agents"},
         "actions": {"vshape": (1,), "group": "agents", "dtype": th.long},
         "avail_actions": {"vshape": (env_info["n_actions"],), "group": "agents", "dtype": th.int},
         "reward": {"vshape": (1,)},
         "terminated": {"vshape": (1,), "dtype": th.uint8},
     }
+    # {'state': {'vshape': 65},
+    # 'obs': {'vshape': 80, 'group': 'agents'},
+    # 'actions': {'vshape': (1,),
+    # 'group': 'agents', 'dtype': torch.int64},
+    # 'avail_actions': {'vshape': (11,), 'group': 'agents', 'dtype': torch.int32},
+    # 'reward': {'vshape': (1,)},
+    # 'terminated': {'vshape': (1,), 'dtype': torch.uint8}}
     groups = {
         "agents": args.n_agents
     }
@@ -176,6 +185,7 @@ def run_sequential(args, logger):
             if episode_sample.device != args.device:
                 episode_sample.to(args.device)
 
+            # print('obs_shape in run():', np.array(episode_sample['obs']).shape)
             learner.train(episode_sample, runner.t_env, episode)
 
         # Execute test runs once in a while

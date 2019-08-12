@@ -1,6 +1,7 @@
 import torch as th
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 
 
 class COMACritic(nn.Module):
@@ -29,7 +30,7 @@ class COMACritic(nn.Module):
     def _build_inputs(self, batch, t=None):
         bs = batch.batch_size
         max_t = batch.max_seq_length if t is None else 1
-        ts = slice(None) if t is None else slice(t, t+1)
+        ts = slice(None) if t is None else slice(t, t+1)  # if t else all
         inputs = []
         # state
         inputs.append(batch["state"][:, ts].unsqueeze(2).repeat(1, 1, self.n_agents, 1))
@@ -37,11 +38,17 @@ class COMACritic(nn.Module):
         # observation
         inputs.append(batch["obs"][:, ts])
 
+        # print('obs_shape in _build_inputs():', np.array(batch['obs']).shape)  # [bs, t_max, n, ob_size]
+        print('sigs_shape in _build_inputs():', np.array(batch['sigs']).shape)  # [bs, t_max, n, ob_size]
         # actions (masked out by agent)
         actions = batch["actions_onehot"][:, ts].view(bs, max_t, 1, -1).repeat(1, 1, self.n_agents, 1)
         agent_mask = (1 - th.eye(self.n_agents, device=batch.device))
         agent_mask = agent_mask.view(-1, 1).repeat(1, self.n_actions).view(self.n_agents, -1)
         inputs.append(actions * agent_mask.unsqueeze(0).unsqueeze(0))
+
+        # print('in _build_inputs')
+        # print('actions', actions.shape)  # [bs, ts, num_agt, num_agt*act_size]
+        # print('agent_mask', agent_mask.shape)  # [num_agt, num_agt*act_size]
 
         # last actions
         if t == 0:
@@ -56,6 +63,7 @@ class COMACritic(nn.Module):
         inputs.append(th.eye(self.n_agents, device=batch.device).unsqueeze(0).unsqueeze(0).expand(bs, max_t, -1, -1))
 
         inputs = th.cat([x.reshape(bs, max_t, self.n_agents, -1) for x in inputs], dim=-1)
+
         return inputs
 
     def _get_input_shape(self, scheme):

@@ -4,6 +4,7 @@ from modules.critics.coma import COMACritic
 from utils.rl_utils import build_td_lambda_targets
 import torch as th
 from torch.optim import RMSprop
+import numpy as np
 
 
 class COMALearner:
@@ -39,7 +40,6 @@ class COMALearner:
         mask = batch["filled"][:, :-1].float()
         mask[:, 1:] = mask[:, 1:] * (1 - terminated[:, :-1])
         avail_actions = batch["avail_actions"][:, :-1]
-
         critic_mask = mask.clone()
 
         mask = mask.repeat(1, 1, self.n_agents).view(-1)
